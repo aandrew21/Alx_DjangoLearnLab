@@ -1,3 +1,4 @@
+from .models import Library
 from django.shortcuts import render
 from .models import Book, Library  # ✅ Make sure Library is imported here
 from django.views.generic.detail import DetailView  # ✅ Import DetailView
