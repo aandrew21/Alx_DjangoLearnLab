@@ -2,6 +2,7 @@ from django.shortcuts import render
 from rest_framework import viewsets, permissions, filters, generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.generics import get_object_or_404  # Import from generics
 from .models import Post, Comment, Like
 from notifications.models import Notification
 from .serializers import PostSerializer, CommentSerializer
@@ -47,11 +48,12 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
 class LikePostView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        post = get_object_or_404(Post, id=pk)
+        post = get_object_or_404(Post, pk=pk)  # Fixed usage of get_object_or_404
         like, created = Like.objects.get_or_create(user=request.user, post=post)
 
         if created:
@@ -60,7 +62,8 @@ class LikePostView(APIView):
                 recipient=post.author,
                 actor=request.user,
                 verb="liked your post",
-                target=post,
+                target_content_type=ContentType.objects.get_for_model(post),
+                target_object_id=post.id,
             )
             return Response({"detail": "Post liked."}, status=status.HTTP_201_CREATED)
         else:
@@ -70,8 +73,11 @@ class UnlikePostView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def delete(self, request, pk):
-        post = get_object_or_404(Post, id=pk)
-        Like.objects.filter(user=request.user, post=post).delete()
-        return Response({"detail": "Post unliked."}, status=status.HTTP_204_NO_CONTENT)
+        post = get_object_or_404(Post, pk=pk)  # Fixed usage of get_object_or_404
+        like = Like.objects.filter(user=request.user, post=post)
+        
+        if like.exists():
+            like.delete()
+            return Response({"detail": "Post unliked."}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"detail": "You haven't liked this post."}, status=status.HTTP_400_BAD_REQUEST)
 
-# Create your views here.
