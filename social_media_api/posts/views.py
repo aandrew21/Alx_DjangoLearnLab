@@ -2,7 +2,6 @@ from django.shortcuts import render
 from rest_framework import viewsets, permissions, filters, generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.generics import get_object_or_404  # Import from generics
 from .models import Post, Comment, Like
 from notifications.models import Notification
 from .serializers import PostSerializer, CommentSerializer
@@ -53,7 +52,7 @@ class LikePostView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, pk):
-        post = get_object_or_404(Post, pk=pk)  # Fixed usage of get_object_or_404
+        post = generics.get_object_or_404(Post, pk=pk)  # Explicitly using generics.get_object_or_404
         like, created = Like.objects.get_or_create(user=request.user, post=post)
 
         if created:
@@ -73,7 +72,7 @@ class UnlikePostView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def delete(self, request, pk):
-        post = get_object_or_404(Post, pk=pk)  # Fixed usage of get_object_or_404
+        post = generics.get_object_or_404(Post, pk=pk)  # Explicitly using generics.get_object_or_404
         like = Like.objects.filter(user=request.user, post=post)
         
         if like.exists():
